@@ -1,0 +1,165 @@
+I'll explain the code line by line 
+
+```python
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_curve, roc_auc_score, auc
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix
+
+data = pd.read_csv('/content/dataset.csv')
+```
+
+- Import necessary Python libraries and modules for data analysis, machine learning, and visualization.
+- Read a CSV file ('dataset.csv') into a pandas DataFrame named `data`.
+
+```python
+data.hist(figsize=(16, 16))
+plt.show()
+```
+
+- Generate histograms for the numerical features in the dataset for data exploration. The `figsize` parameter specifies the figure size.
+- Display the histograms using `plt.show()`.
+
+```python
+num_samples = len(data)
+unique_elements = data.nunique()
+print(unique_elements)
+```
+
+- Calculate and store the number of samples in the dataset (`num_samples`).
+- Calculate the number of unique elements in each feature and print the results to understand the data better.
+
+```python
+null_values = data.isnull().sum()
+print(null_values)
+```
+
+- Check for missing values in the dataset (`data.isnull().sum()`) and print the count of missing values for each feature.
+
+```python
+corr_matrix = data.corr(numeric_only=True)
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+plt.show()
+```
+
+- Calculate the correlation matrix for numerical features in the dataset using `data.corr()`.
+- Create a heatmap of the correlation matrix with annotations and a colormap to visualize the relationships between features.
+
+```python
+threshold = 0.5
+correlated_features = set()
+for i in range(len(corr_matrix.columns)):
+  for j in range(i):
+    if abs(corr_matrix.iloc[i, j]) > threshold:
+      colname = corr_matrix.columns[i]
+      correlated_features.add(colname)
+print("Correlated Features:", correlated_features)
+```
+
+- Define a correlation threshold (`threshold`) and identify highly correlated features. Features with correlations above the threshold are added to the `correlated_features` set.
+
+```python
+categorical_cols = data.select_dtypes(include=['object']).columns
+label_encoders = {}
+for col in categorical_cols:
+    le = LabelEncoder()
+    data[col] = le.fit_transform(data[col])
+    label_encoders[col] = le
+```
+
+- Identify and handle categorical data by encoding it with LabelEncoder. Store the LabelEncoders used for each categorical column in `label_encoders`.
+
+```python
+data.dropna(inplace=True)
+```
+
+- Remove rows with missing values from the dataset.
+
+```python
+selected_features = [col for col in data.columns if col not in correlated_features]
+```
+
+- Select features based on the correlation analysis by excluding the correlated features identified earlier.
+
+```python
+X = data[selected_features]
+y = data['Result']
+```
+
+- Split the data into features (`X`) and the target variable (`y`).
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+
+- Split the data into training (70%) and testing (30%) sets using `train_test_split`. The `random_state` ensures reproducibility.
+
+```python
+clf = RandomForestClassifier(random_state=42)
+clf.fit(X_train, y_train)
+```
+
+- Initialize and train a Random Forest Classifier with a specified random seed (`random_state`).
+
+```python
+y_pred = clf.predict(X_test)
+```
+
+- Use the trained model to make predictions on the test set.
+
+```python
+accuracy = accuracy_score(y_test, y_pred)
+print(accuracy)
+```
+
+- Calculate and print the accuracy score of the model's predictions.
+
+```python
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+```
+
+- Calculate precision, recall, and F1-score for the model's predictions.
+
+```python
+cm = confusion_matrix(y_test, y_pred)
+print("Accuracy:", accuracy)
+print("Precision:", precision)
+print("Recall:", recall)
+print("F1-Score:", f1)
+print("Confusion Matrix:\n", cm)
+```
+
+- Calculate and print the confusion matrix, along with accuracy, precision, recall, and F1-score.
+
+```python
+param_grid = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
+```
+
+- Define a grid of hyperparameters to search for the best combination.
+
+```python
+model = RandomForestClassifier(random_state=42)
+grid_search = GridSearchCV(model, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(X_train, y_train)
+best_params = grid_search.best_params_
+print("Best Hyperparameters:", best_params)
+```
+
+- Initialize a Random Forest Classifier model and perform hyperparameter tuning using GridSearchCV. Print the best hyperparameters found.
+
+---
